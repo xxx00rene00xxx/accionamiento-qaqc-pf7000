@@ -896,8 +896,19 @@ async function loadHistory() {
                     }
                 });
 
-                if (eid) await _supabase.from('respuestas_checklist_powerflex7000_migracion').delete().eq('checklist_id', eid);
-                await _supabase.from('respuestas_checklist_powerflex7000_migracion').insert(finalResponses);
+
+				if (eid) {
+                    // Si es edición, usamos upsert resolviendo el conflicto por la clave compuesta
+                    await _supabase
+                        .from('respuestas_checklist_powerflex7000_migracion')
+                        .upsert(finalResponses, { onConflict: 'checklist_id,tarea_id' });
+                } else {
+                    // Si es un registro completamente nuevo, inserta normalmente
+                    await _supabase
+                        .from('respuestas_checklist_powerflex7000_migracion')
+                        .insert(finalResponses);
+                }
+				
                 
                 showMessage("DATOS GUARDADOS CORRECTAMENTE", "success");
                 resetFormToNew(); loadHistory(); switchTab('dashboard-tab');
